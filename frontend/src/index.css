@@ -1,0 +1,106 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Archivo+Black&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', system-ui, sans-serif;
+  background-color: #ffffff;
+  color: #0a0a0a;
+}
+
+::selection {
+  background: #ff3b00;
+  color: #fff;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: #f4f4f4;
+}
+::-webkit-scrollbar-thumb {
+  background: #171717;
+  border-radius: 0;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #ff3b00;
+}
+
+@layer base {
+  h1, h2, h3, h4 {
+    font-family: 'Archivo Black', 'Inter', sans-serif;
+    letter-spacing: -0.02em;
+  }
+}
+
+@layer components {
+  .container-x {
+    @apply max-w-9xl mx-auto px-4 sm:px-6 lg:px-10 xl:px-16;
+  }
+  .container-wide {
+    @apply max-w-none mx-auto px-4 sm:px-6 lg:px-10 xl:px-16;
+  }
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 bg-ink-950 text-white px-6 py-3 text-sm font-semibold uppercase tracking-widest transition-all hover:bg-accent-500 hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:pointer-events-none;
+  }
+  .btn-accent {
+    @apply inline-flex items-center justify-center gap-2 bg-accent-500 text-white px-6 py-3 text-sm font-semibold uppercase tracking-widest transition-all hover:bg-ink-950 hover:scale-[1.02] active:scale-95;
+  }
+  .btn-outline {
+    @apply inline-flex items-center justify-center gap-2 border-2 border-ink-950 text-ink-950 px-6 py-3 text-sm font-semibold uppercase tracking-widest transition-all hover:bg-ink-950 hover:text-white active:scale-95;
+  }
+  .input-field {
+    @apply w-full bg-transparent border-0 border-b-2 border-ink-200 py-3 px-0 text-ink-950 placeholder-ink-300 focus:border-ink-950 focus:ring-0 outline-none transition-colors duration-300;
+  }
+  .label-over {
+    @apply text-xs font-semibold uppercase tracking-[0.2em] text-ink-500;
+  }
+  .badge {
+    @apply inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest px-2 py-1;
+  }
+  .card-hover {
+    @apply transition-transform duration-500 will-change-transform;
+  }
+  .section-pad {
+    @apply py-20 lg:py-28;
+  }
+  .heading-xl {
+    @apply font-display text-[clamp(2.5rem,8vw,8rem)] leading-[0.9] tracking-tight;
+  }
+  .heading-lg {
+    @apply font-display text-[clamp(2rem,5vw,4.5rem)] leading-[0.95] tracking-tight;
+  }
+  .heading-md {
+    @apply font-display text-[clamp(1.5rem,3vw,2.5rem)] leading-tight tracking-tight;
+  }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 1000px 100%;
+  animation: shimmer 2s linear infinite;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
