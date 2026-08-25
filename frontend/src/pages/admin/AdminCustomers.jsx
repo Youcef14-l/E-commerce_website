@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Search, X, Mail, Calendar, ShoppingBag, DollarSign, Users } from 'lucide-react'
-import { supabase } from '../../lib/supabaseClient'
+import { adminFetchProfiles, adminFetchAllOrders } from '../../lib/api'
 import { formatPrice, formatDate, classNames } from '../../lib/utils'
 
 export default function AdminCustomers() {
@@ -13,17 +13,17 @@ export default function AdminCustomers() {
 
   useEffect(() => {
     async function load() {
-      const [{ data: profiles }, { data: orderRows }] = await Promise.all([
-        supabase.from('profiles').select('*').order('created_at', { ascending: false }),
-        supabase.from('orders').select('id, user_id, total, status, created_at'),
+      const [profiles, orderRows] = await Promise.all([
+        adminFetchProfiles(),
+        adminFetchAllOrders(),
       ])
       const orderMap = {}
-      orderRows?.forEach((o) => {
+      orderRows.forEach((o) => {
         if (!orderMap[o.user_id]) orderMap[o.user_id] = []
         orderMap[o.user_id].push(o)
       })
       setOrders(orderMap)
-      setCustomers(profiles || [])
+      setCustomers(profiles)
       setLoading(false)
     }
     load()

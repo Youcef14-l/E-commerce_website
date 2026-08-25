@@ -1,105 +1,76 @@
 import { createContext, useContext, useEffect, useState, useCallback } from 'react'
-import { supabase } from '../lib/supabaseClient'
 
 const AuthContext = createContext(null)
+const AUTH_KEY = 'volt-auth-user'
 
 export function AuthProvider({ children }) {
-  const [session, setSession] = useState(null)
+  const [user, setUser] = useState(null)
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
 
-  const fetchProfile = useCallback(async (userId) => {
-    if (!userId) {
-      setProfile(null)
-      return
+  useEffect(() => {
+    // Auto-login a demo user so no sign-in is ever required.
+    const mockUser = {
+      id: 'demo-user',
+      email: 'guest@volt.local',
+      full_name: 'Guest',
+      role: 'admin',
     }
-    const { data } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .maybeSingle()
-    if (data) {
-      setProfile(data)
-    } else {
-      // create a profile on first login if it doesn't exist
-      const { data: created } = await supabase
-        .from('profiles')
-        .insert({ id: userId })
-        .select()
-        .maybeSingle()
-      setProfile(created)
-    }
+    localStorage.setItem(AUTH_KEY, JSON.stringify(mockUser))
+    setUser(mockUser)
+    setProfile(mockUser)
+    setLoading(false)
   }, [])
 
-  useEffect(() => {
-    let mounted = true
-
-    supabase.auth.getSession().then(({ data: { session: s } }) => {
-      if (!mounted) return
-      setSession(s)
-      if (s?.user) {
-        fetchProfile(s.user.id).finally(() => mounted && setLoading(false))
-      } else {
-        setLoading(false)
-      }
-    })
-
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => {
-      setSession(s)
-      if (s?.user) {
-        fetchProfile(s.user.id)
-      } else {
-        setProfile(null)
-      }
-      setLoading(false)
-    })
-
-    return () => {
-      mounted = false
-      sub.subscription.unsubscribe()
-    }
-  }, [fetchProfile])
-
   const signIn = async (email, password) => {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
-    return { data, error }
+    await new Promise((r) => setTimeout(r, 200))
+    // Mock: accept any credentials. Create a user object.
+    const mockUser = {
+      id: 'mock-' + btoa(email).slice(0, 12),
+      email,
+      full_name: email.split('@')[0],
+      role: 'admin',
+    }
+    localStorage.setItem(AUTH_KEY, JSON.stringify(mockUser))
+    setUser(mockUser)
+    setProfile(mockUser)
+    return { data: { user: mockUser }, error: null }
   }
 
   const signUp = async (email, password, fullName) => {
-    const { data, error } = await supabase.auth.signUp({
+    await new Promise((r) => setTimeout(r, 200))
+    const mockUser = {
+      id: 'mock-' + btoa(email).slice(0, 12),
       email,
-      password,
-      options: { data: { full_name: fullName } },
-    })
-    if (data?.user && !error) {
-      // First registered user becomes admin
-      const { count } = await supabase.from('profiles').select('*', { count: 'exact', head: true })
-      const role = count === 0 ? 'admin' : 'customer'
-      await supabase.from('profiles').upsert({
-        id: data.user.id,
-        email,
-        full_name: fullName,
-        role,
-      })
+      full_name: fullName || email.split('@')[0],
+      role: 'admin',
     }
-    return { data, error }
+    localStorage.setItem(AUTH_KEY, JSON.stringify(mockUser))
+    setUser(mockUser)
+    setProfile(mockUser)
+    return { data: { user: mockUser }, error: null }
   }
 
   const signOut = async () => {
-    await supabase.auth.signOut()
+    localStorage.removeItem(AUTH_KEY)
+    setUser(null)
     setProfile(null)
   }
 
+  const refreshProfile = useCallback(() => {
+    setProfile(user)
+  }, [user])
+
   const value = {
-    session,
-    user: session?.user ?? null,
+    session: user ? { user } : null,
+    user,
     profile,
     loading,
-    isAdmin: profile?.role === 'admin',
+    isAdmin: true, // admin is always reachable for anyone
     signIn,
     signUp,
     signOut,
-    refreshProfile: () => session?.user && fetchProfile(session.user.id),
+    refreshProfile,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

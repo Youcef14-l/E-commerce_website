@@ -5,7 +5,7 @@ import { Check, ArrowRight, ArrowLeft, CreditCard, Truck, ShoppingBag, Lock } fr
 import { useCart } from '../context/CartContext'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
-import { supabase } from '../lib/supabaseClient'
+import { createOrder } from '../lib/api'
 import { formatPrice } from '../lib/utils'
 
 const steps = [
@@ -38,7 +38,7 @@ export default function Checkout() {
   const [placing, setPlacing] = useState(false)
   const [order, setOrder] = useState(null)
 
-  if (!user) return <Navigate to="/login?redirect=/checkout" replace />
+  if (!user) return null
   if (items.length === 0 && !order) return <Navigate to="/cart" replace />
 
   const shippingCost = subtotal > 99 ? 0 : 12
@@ -60,40 +60,35 @@ export default function Checkout() {
 
   const placeOrder = async () => {
     setPlacing(true)
-    const { data: orderRow, error } = await supabase
-      .from('orders')
-      .insert({
-        user_id: user.id,
-        status: 'processing',
-        total,
-        subtotal,
-        shipping: shippingCost,
-        tax,
-        shipping_name: shipping.name,
-        shipping_email: shipping.email,
-        shipping_address: shipping.address,
-        shipping_city: shipping.city,
-        shipping_zip: shipping.zip,
-        shipping_country: shipping.country,
-      })
-      .select()
-      .maybeSingle()
-
-    if (error || !orderRow) {
-      setPlacing(false)
-      toast.error('Could not place order. Try again.')
-      return
+    const orderData = {
+      user_id: user.id,
+      status: 'processing',
+      total,
+      subtotal,
+      shipping: shippingCost,
+      tax,
+      shipping_name: shipping.name,
+      shipping_email: shipping.email,
+      shipping_address: shipping.address,
+      shipping_city: shipping.city,
+      shipping_zip: shipping.zip,
+      shipping_country: shipping.country,
     }
-
     const orderItems = items.map((i) => ({
-      order_id: orderRow.id,
       product_id: i.id,
       name: i.product?.name,
       price: i.product?.price,
       quantity: i.quantity,
       image_url: i.product?.images?.[0],
     }))
-    await supabase.from('order_items').insert(orderItems)
+
+    const { data: orderRow, error } = await createOrder(orderData, orderItems)
+
+    if (error || !orderRow) {
+      setPlacing(false)
+      toast.error('Could not place order. Try again.')
+      return
+    }
 
     await clearCart()
     setPlacing(false)

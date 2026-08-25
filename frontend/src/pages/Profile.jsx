@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, useSearchParams, Navigate } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Package, Settings, MapPin, Heart, LogOut, Plus, Trash2, Check, ArrowRight,
@@ -7,8 +7,7 @@ import {
 import { useAuth } from '../context/AuthContext'
 import { useWishlist } from '../context/WishlistContext'
 import { useToast } from '../context/ToastContext'
-import { supabase } from '../lib/supabaseClient'
-import { fetchProductsByIds } from '../lib/api'
+import { fetchProductsByIds, fetchUserOrders, updateProfile, fetchAddresses, addAddress, deleteAddress } from '../lib/api'
 import { formatPrice, formatDate, classNames } from '../lib/utils'
 import ProductCard from '../components/ProductCard'
 
@@ -26,7 +25,7 @@ export default function Profile() {
   const [searchParams, setSearchParams] = useSearchParams()
   const activeTab = searchParams.get('tab') || 'orders'
 
-  if (!user) return <Navigate to="/login?redirect=/profile" replace />
+  if (!user) return null
 
   const setTab = (key) => setSearchParams({ tab: key })
 
@@ -109,15 +108,10 @@ function OrdersTab({ userId }) {
   const [expanded, setExpanded] = useState(null)
 
   useEffect(() => {
-    supabase
-      .from('orders')
-      .select('*, order_items(*)')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false })
-      .then(({ data }) => {
-        setOrders(data || [])
-        setLoading(false)
-      })
+    fetchUserOrders(userId).then((data) => {
+      setOrders(data)
+      setLoading(false)
+    })
   }, [userId])
 
   if (loading) {
@@ -211,10 +205,7 @@ function SettingsTab({ user, profile, refreshProfile }) {
   const save = async (e) => {
     e.preventDefault()
     setSaving(true)
-    const { error } = await supabase
-      .from('profiles')
-      .update({ full_name: fullName, phone })
-      .eq('id', user.id)
+    const { error } = await updateProfile(user.id, { full_name: fullName, phone })
     setSaving(false)
     if (error) {
       toast.error('Could not save settings')
@@ -269,23 +260,17 @@ function AddressesTab({ userId }) {
   const [form, setForm] = useState({ label: 'Home', full_name: '', address: '', city: '', zip: '', country: 'United States', phone: '' })
   const toast = useToast()
 
-  const load = () => {
-    supabase.from('addresses').select('*').eq('user_id', userId).order('created_at', { ascending: false })
-      .then(({ data }) => {
-        setAddresses(data || [])
-        setLoading(false)
-      })
+  const load = async () => {
+    const data = await fetchAddresses(userId)
+    setAddresses(data)
+    setLoading(false)
   }
 
-  useEffect(load, [userId])
+  useEffect(() => { load() }, [userId])
 
   const add = async (e) => {
     e.preventDefault()
-    const { error } = await supabase.from('addresses').insert({ user_id: userId, ...form })
-    if (error) {
-      toast.error('Could not add address')
-      return
-    }
+    await addAddress(userId, form)
     toast.success('Address added')
     setAdding(false)
     setForm({ label: 'Home', full_name: '', address: '', city: '', zip: '', country: 'United States', phone: '' })
@@ -293,7 +278,7 @@ function AddressesTab({ userId }) {
   }
 
   const remove = async (id) => {
-    await supabase.from('addresses').delete().eq('id', id)
+    await deleteAddress(userId, id)
     load()
     toast.info('Address removed')
   }

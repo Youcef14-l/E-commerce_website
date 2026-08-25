@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Search, Plus, Pencil, Trash2, ArrowUpDown, Filter, X, Package } from 'lucide-react'
-import { supabase } from '../../lib/supabaseClient'
+import { adminFetchProducts, adminFetchCategories, adminDeleteProduct } from '../../lib/api'
 import { useToast } from '../../context/ToastContext'
 import { formatPrice, classNames } from '../../lib/utils'
 
@@ -18,13 +18,10 @@ export default function AdminProducts() {
 
   const load = async () => {
     setLoading(true)
-    const { data } = await supabase
-      .from('products')
-      .select('*, categories(name)')
-      .order('created_at', { ascending: false })
-    setProducts(data || [])
-    const { data: cats } = await supabase.from('categories').select('*').order('name')
-    setCategories(cats || [])
+    const data = await adminFetchProducts()
+    setProducts(data)
+    const cats = await adminFetchCategories()
+    setCategories(cats)
     setLoading(false)
   }
 
@@ -55,7 +52,7 @@ export default function AdminProducts() {
   }
 
   const confirmDelete = async () => {
-    const { error } = await supabase.from('products').delete().eq('id', deleteId)
+    const { error } = await adminDeleteProduct(deleteId)
     if (error) {
       toast.error('Could not delete product')
     } else {

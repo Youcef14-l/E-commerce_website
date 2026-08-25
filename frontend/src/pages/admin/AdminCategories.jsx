@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, Pencil, Trash2, X, FolderTree } from 'lucide-react'
-import { supabase } from '../../lib/supabaseClient'
+import { adminFetchCategories, adminCreateCategory, adminUpdateCategory, adminDeleteCategory, adminFetchProducts } from '../../lib/api'
 import { useToast } from '../../context/ToastContext'
 import { slugify, classNames } from '../../lib/utils'
 
@@ -15,11 +15,11 @@ export default function AdminCategories() {
 
   const load = async () => {
     setLoading(true)
-    const { data } = await supabase.from('categories').select('*').order('name')
-    setCategories(data || [])
-    const { data: products } = await supabase.from('products').select('category_id')
+    const cats = await adminFetchCategories()
+    setCategories(cats)
+    const products = await adminFetchProducts()
     const c = {}
-    products?.forEach((p) => { if (p.category_id) c[p.category_id] = (c[p.category_id] || 0) + 1 })
+    products.forEach((p) => { if (p.category_id) c[p.category_id] = (c[p.category_id] || 0) + 1 })
     setCounts(c)
     setLoading(false)
   }
@@ -36,11 +36,11 @@ export default function AdminCategories() {
       image_url: editing.image_url || null,
     }
     if (editing.id) {
-      const { error } = await supabase.from('categories').update(payload).eq('id', editing.id)
+      const { error } = await adminUpdateCategory(editing.id, payload)
       if (error) { toast.error('Could not update category'); return }
       toast.success('Category updated')
     } else {
-      const { error } = await supabase.from('categories').insert(payload)
+      const { error } = await adminCreateCategory(payload)
       if (error) { toast.error('Could not create category'); return }
       toast.success('Category created')
     }
@@ -49,7 +49,7 @@ export default function AdminCategories() {
   }
 
   const confirmDelete = async () => {
-    const { error } = await supabase.from('categories').delete().eq('id', deleteId)
+    const { error } = await adminDeleteCategory(deleteId)
     if (error) { toast.error('Could not delete category'); return }
     toast.success('Category deleted')
     setDeleteId(null)

@@ -18,20 +18,9 @@ const links = [
 ]
 
 export default function AdminLayout() {
-  const { user, isAdmin, loading, signOut } = useAuth()
+  const { user, signOut } = useAuth()
   const navigate = useNavigate()
   const [sidebarOpen, setSidebarOpen] = useState(false)
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-pulse font-display text-2xl">VOLT Admin</div>
-      </div>
-    )
-  }
-
-  if (!user) return <Navigate to="/login?redirect=/admin" replace />
-  if (!isAdmin) return <Navigate to="/" replace />
 
   return (
     <div className="min-h-screen bg-ink-50 flex">

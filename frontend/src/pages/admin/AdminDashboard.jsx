@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { DollarSign, ShoppingBag, Users, Package, ArrowUpRight, TrendingUp } from 'lucide-react'
-import { supabase } from '../../lib/supabaseClient'
+import { adminFetchOrders, adminFetchProducts, adminFetchProfiles } from '../../lib/api'
 import { formatPrice, formatDate, classNames } from '../../lib/utils'
 import { Reveal } from '../../components/motion/Reveal'
 
@@ -15,14 +15,11 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     async function load() {
-      const [ordersRes, productsRes, profilesRes] = await Promise.all([
-        supabase.from('orders').select('*').order('created_at', { ascending: false }),
-        supabase.from('products').select('*'),
-        supabase.from('profiles').select('*'),
+      const [orders, products, profiles] = await Promise.all([
+        adminFetchOrders(),
+        adminFetchProducts(),
+        adminFetchProfiles(),
       ])
-      const orders = ordersRes.data || []
-      const products = productsRes.data || []
-      const profiles = profilesRes.data || []
 
       const revenue = orders.reduce((sum, o) => sum + Number(o.total), 0)
       setStats({

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Search, X, ShoppingBag } from 'lucide-react'
-import { supabase } from '../../lib/supabaseClient'
+import { adminFetchOrders, adminUpdateOrderStatus } from '../../lib/api'
 import { useToast } from '../../context/ToastContext'
 import { formatPrice, formatDate, classNames } from '../../lib/utils'
 
@@ -24,11 +24,8 @@ export default function AdminOrders() {
 
   const load = async () => {
     setLoading(true)
-    const { data } = await supabase
-      .from('orders')
-      .select('*, order_items(*)')
-      .order('created_at', { ascending: false })
-    setOrders(data || [])
+    const data = await adminFetchOrders()
+    setOrders(data)
     setLoading(false)
   }
 
@@ -48,7 +45,7 @@ export default function AdminOrders() {
   })
 
   const updateStatus = async (orderId, status) => {
-    const { error } = await supabase.from('orders').update({ status }).eq('id', orderId)
+    const { error } = await adminUpdateOrderStatus(orderId, status)
     if (error) { toast.error('Could not update status'); return }
     toast.success(`Order marked ${status}`)
     setOrders((prev) => prev.map((o) => o.id === orderId ? { ...o, status } : o))

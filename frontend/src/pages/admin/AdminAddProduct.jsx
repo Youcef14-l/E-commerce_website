@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { ArrowLeft, Save, Plus, Trash2, X } from 'lucide-react'
-import { supabase } from '../../lib/supabaseClient'
+import { adminFetchCategories, adminFetchProductById, adminCreateProduct, adminUpdateProduct } from '../../lib/api'
 import { useToast } from '../../context/ToastContext'
 import { slugify, classNames } from '../../lib/utils'
 
@@ -30,9 +30,9 @@ export default function AdminAddProduct() {
   const [specs, setSpecs] = useState([{ key: '', value: '' }])
 
   useEffect(() => {
-    supabase.from('categories').select('*').order('name').then(({ data }) => setCategories(data || []))
+    adminFetchCategories().then(setCategories)
     if (isEdit) {
-      supabase.from('products').select('*').eq('id', id).maybeSingle().then(({ data }) => {
+      adminFetchProductById(id).then((data) => {
         if (data) {
           setForm({
             name: data.name,
@@ -97,12 +97,12 @@ export default function AdminAddProduct() {
     }
 
     if (isEdit) {
-      const { error } = await supabase.from('products').update(payload).eq('id', id)
+      const { error } = await adminUpdateProduct(id, payload)
       setSaving(false)
       if (error) { toast.error('Could not update product'); return }
       toast.success('Product updated')
     } else {
-      const { error } = await supabase.from('products').insert(payload)
+      const { error } = await adminCreateProduct(payload)
       setSaving(false)
       if (error) { toast.error('Could not create product'); return }
       toast.success('Product created')
